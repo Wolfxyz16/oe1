@@ -288,7 +288,11 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 	-- finally, if dest_node still is nil we must build a L shaped corridor
 	-- TODO, the destination node is not the room middle point, must be one of the nearest border node
 	if not dest_node then
-		ray = Raycast(room_mid_point2, room_mid_point2 - direction * 1000)
+    local length = math.abs(vector.dot(orig_node, sb_direction) - vector.dot(room_mid_point2, sb_direction))
+    print("distance " .. length)
+    print(vector.multiply(sb_direction, length))
+		print("ray from ", vector.to_string(room_mid_point2), " to ", vector.to_string(orig_node, vector.multiply(sb_direction, length)))
+		ray = Raycast(room_mid_point2, orig_node + vector.multiply(sb_direction, length))
 		for pointed_thing in ray do
 			-- check if the pointed thing is a node
 			if pointed_thing.type == "node" then
@@ -348,9 +352,6 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 		core.set_node(vector.offset(orig_node, 0, 1, 0), {name="air"})
 		core.set_node(vector.offset(orig_node, 0, 2, 0), {name="air"})
 		core.set_node(vector.offset(orig_node, 0, 3, 0), {name="default:copperblock"})
-
-		core.set_node(vector.offset(orig_node, 1, 1, 0), {name="default:copperblock"})
-		core.set_node(vector.offset(orig_node, -1, 1, 0), {name="default:copperblock"})
 
 		orig_node = orig_node + direction
 	end

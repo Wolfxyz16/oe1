@@ -6,9 +6,9 @@ Subdungeon = {}
 -- Subdungeon metadata
 Subdungeon.ROOM_BLOCK = {name = "default:cobble", param2 = 1}
 Subdungeon.CORRIDOR_BLOCK = {name = "default:copperblock", param2 = 1}
-Subdungeon.MAX_M2 = 1000
+Subdungeon.MAX_M2 = 1500
 Subdungeon.MAX_ROOM_HEIGTH = 5
-Subdungeon.MIN_ROOM_LENGTH = 5
+Subdungeon.MIN_ROOM_LENGTH = 10
 
 function Subdungeon:new(data)
 	local obj = {}
@@ -231,7 +231,7 @@ end
 
 function Subdungeon:is_valid()
 	-- check if the subdungeon has the minimum height and width
-	return self.min_width < self.data[1] and self.min_height < self.data[2]
+	return Subdungeon.MIN_ROOM_LENGTH < self.data[1] and Subdungeon.MIN_ROOM_LENGTH < self.data[2]
 end
 
 --- Hardcoded function, should be using luanti's vector API
