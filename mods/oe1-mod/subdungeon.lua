@@ -4,10 +4,12 @@
 Subdungeon = {}
 
 -- Subdungeon metadata
+-- WARNING
+-- MIN_ROOM_LENGTH^2 must be less than MAX_M2, rooms need space to spawn in the subdungeon area
 Subdungeon.ROOM_BLOCK = {name = "default:cobble", param2 = 1}
 Subdungeon.CORRIDOR_BLOCK = {name = "default:copperblock", param2 = 1}
-Subdungeon.MAX_M2 = 1500
-Subdungeon.MAX_ROOM_HEIGTH = 5
+Subdungeon.MAX_M2 = 1000
+Subdungeon.MAX_ROOM_HEIGTH = 10
 Subdungeon.MIN_ROOM_LENGTH = 10
 
 function Subdungeon:new(data)
@@ -231,7 +233,8 @@ end
 
 function Subdungeon:is_valid()
 	-- check if the subdungeon has the minimum height and width
-	return Subdungeon.MIN_ROOM_LENGTH < self.data[1] and Subdungeon.MIN_ROOM_LENGTH < self.data[2]
+  local aspect_ratio = math.max(self.data[1], self.data[2]) / math.min(self.data[1], self.data[2])
+	return Subdungeon.MIN_ROOM_LENGTH < self.data[1] and Subdungeon.MIN_ROOM_LENGTH < self.data[2] and aspect_ratio < 10
 end
 
 --- Hardcoded function, should be using luanti's vector API

@@ -302,6 +302,10 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 		end
 	end
 
+  -- fallback
+  -- TODO fix this bug, sometime when the dungeon is big the L shape corridor fails
+  if not dest_node then dest_node = room_mid_point2 end
+
 	-- return to y=0
 	orig_node = orig_node - vector.new(0, 1, 0)
 	dest_node = dest_node - vector.new(0, 1, 0)
@@ -347,17 +351,22 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 	-- TODO we must go first in the sb_direction and then in the other, however we dont know which of the directions holds the sb_direction
 	-- check it with and if and select first direction and then the other
 
-	while vector.dot(orig_node, direction) ~= vector.dot(dest_node, direction) do
+	while vector.dot(orig_node, sb_direction) ~= vector.dot(dest_node, sb_direction) do
 		core.set_node(orig_node, {name="default:copperblock"})
 		core.set_node(vector.offset(orig_node, 0, 1, 0), {name="air"})
 		core.set_node(vector.offset(orig_node, 0, 2, 0), {name="air"})
 		core.set_node(vector.offset(orig_node, 0, 3, 0), {name="default:copperblock"})
 
-		orig_node = orig_node + direction
+		orig_node = orig_node + sb_direction
 	end
 
 	-- we have not reach the destination, we need an L shaped corridor
 	if other_direction then
+    -- if other_direction is the sb_direction we must change the direction
+    -- srry for bad explaining :(
+    if sb_direction == other_direction then
+      other_direction = direction
+    end
 		while vector.dot(orig_node, other_direction) ~= vector.dot(dest_node, other_direction) do
 			core.set_node(orig_node, {name="default:copperblock"})
 			core.set_node(vector.offset(orig_node, 0, 1, 0), {name="air"})
