@@ -15,16 +15,21 @@ end)
 core.register_on_newplayer(function(player)
 	-- create dungeon object and calculate its nodes
 	math.randomseed(os.time() * 22)
-	d = Dungeon:new( Subdungeon:new({1000, 1000 ,vector.new(0, 0, 0)}) )
-	-- d:create_dirt_floor()
+	d = Dungeon:new( Subdungeon:new({100, 100 ,vector.new(0, 0, 0)}) )
 	d:generate()
+
 	print("There are " .. #d.root.rooms .. " rooms")
+	print("Setting spawn point...")
+
+	local spawn_point = d:get_spawn_point()
+
+	player:set_pos(spawn_point)
 end)
 
 -- Executed when the player joins the game
 core.register_on_joinplayer(function(player, _last_login)
 	-- Welcome message
-	core.chat_send_all("Hello from oe1111")
+	core.chat_send_all("Hello from oe1")
 
     -- Disable HUD elements
     player:hud_set_flags({
@@ -32,9 +37,6 @@ core.register_on_joinplayer(function(player, _last_login)
 		crosshair = false,
 		healthbar = false,
 	})
-
-    -- Set the player's initial position
-    player:set_pos({x = 25, z = 25, y = 20})
 
 	-- Set flying privilege
 	local privs = core.get_player_privs(player:get_player_name())

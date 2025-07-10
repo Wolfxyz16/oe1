@@ -22,13 +22,6 @@ function Dungeon:new(sb)
 	obj.point = sb.data[3]
 	obj.room_counter = 0
 
-	-- place goldblocks in the corners for debugging
-	core.set_node(obj.point, {name = "default:goldblock"})
-	core.set_node({x=obj.point.x + obj.width, y=obj.point.y, z=obj.point.z + obj.height	}, {name = "default:goldblock"})
-	core.set_node({x=obj.point.x			, y=obj.point.y, z=obj.point.z + obj.height	}, {name = "default:goldblock"})
-	core.set_node({x=obj.point.x + obj.width, y=obj.point.y, z=obj.point.z				}, {name = "default:goldblock"})
-	-- debugging
-
 	self.__index = self
     setmetatable(obj, Dungeon)
 
@@ -191,7 +184,7 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 
 	-- search for the pair of rooms with the lowest distance
     local min_distance = math.huge
-    local room_mid_point1, room_mid_point2
+    local room_mid_point1, room_mid_point2, closest_room1, closest_room2
     for _, room1 in ipairs(rooms1) do
         for _, room2 in ipairs(rooms2) do
             local mid1, mid2 = room_middle_point(room1), room_middle_point(room2)
@@ -199,100 +192,116 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
             if dist < min_distance then
                 min_distance = dist
                 room_mid_point1, room_mid_point2 = mid1, mid2
+				closest_room1, closest_room2 = room1, room2
             end
         end
     end
+
+	print("rooms_mid_point " .. vector.to_string(room_mid_point1) .. ' ' .. vector.to_string(room_mid_point2))
 
 	-- we need to be in y=1 to cast the raycasts, in y=0 they will collide against the floor
 	room_mid_point1 = room_mid_point1 + vector.new(0, 1, 0)
 	room_mid_point2 = room_mid_point2 + vector.new(0, 1, 0)
 
-	-- room_mid_point1 and room_mid_point2 are diagonally nodes, we need an L shaped corridor
-	if room_mid_point1.x < room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
-		direction = vector.new(1, 0 , 0)
-		other_direction = vector.new(0, 0, 1)
-	elseif room_mid_point1.x < room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
-		direction = vector.new(1, 0, 0)
-		other_direction = vector.new(0, 0, -1)
-	elseif room_mid_point1.x > room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
-		direction = vector.new(-1, 0, 0)
-		other_direction = vector.new(0, 0, -1)
-	elseif room_mid_point1.x > room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
-		direction = vector.new(-1, 0, 0)
-		other_direction = vector.new(0, 0, 1)
-	elseif room_mid_point1.x == room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
-		direction = vector.new(0, 0, 1)
-	elseif room_mid_point1.x == room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
-		direction = vector.new(0, 0, -1)
-	elseif room_mid_point1.z == room_mid_point2.z and room_mid_point1.x < room_mid_point2.x then
-		direction = vector.new(1, 0, 0)
-	elseif room_mid_point1.z == room_mid_point2.z and room_mid_point1.x > room_mid_point2.x then
-		direction = vector.new(-1, 0, 0)
-	end
-
-	print("rooms_mid_point " .. vector.to_string(room_mid_point1) .. ' ' .. vector.to_string(room_mid_point2))
-
-
 	--------------------------------------------
 	-- CALCULATE ORIGIN AND DESTINATION NODES --
 	--------------------------------------------
-	local orig_node, orig_node2, dest_node, ray
+	local orig_node, dest_node, ray
 
 	-- calculate the possible origins points of the corridor using luanti's Raycast
 	do
-		local pointed_nodes = {}
 		ray = Raycast(room_mid_point1, room_mid_point2)
 		for pointed_thing in ray do
 			if pointed_thing.type == "node" then
-				table.insert(pointed_nodes, pointed_thing.under)
-			end
-		end
-
-		orig_node = pointed_nodes[1]
-		orig_node2 = pointed_nodes[#pointed_nodes]
-	end
-
-	-- check if we can build a straight corridor from orig_node
-	do
-		local length = sb_direction * math.round(min_distance)
-		ray = Raycast(orig_node + sb_direction, orig_node + length)
-
-		print("ray from ", vector.to_string(orig_node), " to ", vector.to_string(orig_node + length))
-
-		for pointed_thing in ray do
-			-- check if the pointed thing is a node
-			if pointed_thing.type == "node" then
-				dest_node = pointed_thing.under
+				orig_node = pointed_thing.under
 				break
 			end
 		end
 	end
 
-	-- if straight corridor from orig_node is not possible check if we can build straight corridor from orig_node2
+	-- check if we can build a straight corridor from room_mid_point
+	local aux_direction = vector.apply(vector.rotate_around_axis(sb_direction, vector.new(0, 1, 0), math.pi / 2), math.abs)
+	-- TODO, length should be til the end of the subdungeon
+	local length = sb_direction * math.round(min_distance * 1.5)
+	local current_node = room_mid_point1
+
+	local index
+
+	if aux_direction.x == 1 then index = 1 else index = 2 end
+
+	for i = 0, (closest_room1[index] / 2) - 1, 1 do
+		-- alternate between + and -
+		for _, sign in ipairs({1, -1}) do
+			local pointed_things = {}
+			current_node = room_mid_point1 + vector.multiply(aux_direction, i * sign)
+			print(vector.to_string(vector.multiply(aux_direction, i * sign)))
+			ray = Raycast(current_node + sb_direction, current_node + length)
+
+			print("Ray from ", vector.to_string(current_node), " to ", vector.to_string(current_node + length))
+
+			-- fill the pointed_things table
+			for pointed_thing in ray do
+				if pointed_thing.type == "node" then
+					table.insert(pointed_things, pointed_thing.under)
+				end
+			end
+
+			if pointed_things[2] and not Utils.is_room_corner(pointed_things[2], closest_room2) then
+				orig_node = pointed_things[1]
+				dest_node = pointed_things[2] + sb_direction
+				break
+			end
+		end
+
+		if dest_node then break end
+	end
+
+	-- finally, if dest_node still is nil we must build a L shaped corridor
 	if not dest_node then
-		local length = sb_direction * math.round(min_distance)
-		ray = Raycast(orig_node2 - sb_direction, orig_node2 - length)
+		print("we going L shape")
 
-		print("ray from ", vector.to_string(orig_node2), " to ", vector.to_string(orig_node2 + length))
+		-- room_mid_point1 and room_mid_point2 are diagonally nodes, we need the vectors in which we can approach dest_node
+		if room_mid_point1.x < room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
+			direction = vector.new(1, 0 , 0)
+			other_direction = vector.new(0, 0, 1)
+		elseif room_mid_point1.x < room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
+			direction = vector.new(1, 0, 0)
+			other_direction = vector.new(0, 0, -1)
+		elseif room_mid_point1.x > room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
+			direction = vector.new(-1, 0, 0)
+			other_direction = vector.new(0, 0, -1)
+		elseif room_mid_point1.x > room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
+			direction = vector.new(-1, 0, 0)
+			other_direction = vector.new(0, 0, 1)
+		elseif room_mid_point1.x == room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
+			direction = vector.new(0, 0, 1)
+		elseif room_mid_point1.x == room_mid_point2.x and room_mid_point1.z > room_mid_point2.z then
+			direction = vector.new(0, 0, -1)
+		elseif room_mid_point1.z == room_mid_point2.z and room_mid_point1.x < room_mid_point2.x then
+			direction = vector.new(1, 0, 0)
+		elseif room_mid_point1.z == room_mid_point2.z and room_mid_point1.x > room_mid_point2.x then
+			direction = vector.new(-1, 0, 0)
+		end
 
+		local distance = math.abs(
+			vector.dot(room_mid_point1, sb_direction) -
+			vector.dot(room_mid_point2, sb_direction)
+		)
+
+		print("distance " .. distance)
+		print(vector.multiply(sb_direction, distance))
+		print("ray from ", vector.to_string(room_mid_point2), " to ", vector.to_string(room_mid_point1, vector.multiply(sb_direction, distance)))
+
+		ray = Raycast(room_mid_point1, room_mid_point1 + vector.multiply(sb_direction, distance))
 		for pointed_thing in ray do
 			-- check if the pointed thing is a node
 			if pointed_thing.type == "node" then
 				orig_node = pointed_thing.under
-				dest_node = orig_node2
 				break
 			end
 		end
-	end
 
-	-- finally, if dest_node still is nil we must build a L shaped corridor
-	-- TODO, the destination node is not the room middle point, must be one of the nearest border node
-	if not dest_node then
-    local length = math.abs(vector.dot(orig_node, sb_direction) - vector.dot(room_mid_point2, sb_direction))
-    print("distance " .. length)
-    print(vector.multiply(sb_direction, length))
-		print("ray from ", vector.to_string(room_mid_point2), " to ", vector.to_string(orig_node, vector.multiply(sb_direction, length)))
-		ray = Raycast(room_mid_point2, orig_node + vector.multiply(sb_direction, length))
+		ray = Raycast(room_mid_point2, room_mid_point1 + vector.multiply(sb_direction, distance))
 		for pointed_thing in ray do
 			-- check if the pointed thing is a node
 			if pointed_thing.type == "node" then
@@ -302,100 +311,90 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 		end
 	end
 
-  -- fallback
-  -- TODO fix this bug, sometime when the dungeon is big the L shape corridor fails
-  if not dest_node then dest_node = room_mid_point2 end
+	-- fallback
+	-- TODO fix this bug, sometime when the dungeon is big the L shape corridor fails
+	if not dest_node then dest_node = room_mid_point2 print("mechachis") end
 
 	-- return to y=0
 	orig_node = orig_node - vector.new(0, 1, 0)
 	dest_node = dest_node - vector.new(0, 1, 0)
 
-	print("from " .. vector.to_string(orig_node) .. " to " .. vector.to_string(dest_node))
-
 	---------------------
 	-- BUILD CORRIDORS --
 	---------------------
-
 	local function place_corridor_with_walls(pos, direction_axis)
+		core.set_node(vector.offset(pos, 0, 3, 0), {name="default:copperblock"})
+		core.set_node(vector.offset(pos, 0, 1, 0), {name="air"})
+		core.set_node(vector.offset(pos, 0, 2, 0), {name="air"})
 		core.set_node(pos, {name="default:copperblock"})
-		core.set_node({x=pos.x, y=pos.y + 1, z=pos.z}, {name="air"})
-		core.set_node({x=pos.x, y=pos.y + 2, z=pos.z}, {name="air"})
-		-- core.set_node({x=pos.x, y=pos.y + 3, z=pos.z}, {name="default:copperblock"})
 
-		-- -- walls
-		if direction_axis == "x" then
-			-- when moving in the x axis, walls must go in the z
-			core.set_node({x=pos.x, y=pos.y + 1, z=pos.z + 1}, {name="default:copperblock"})
-			core.set_node({x=pos.x, y=pos.y + 2, z=pos.z + 1}, {name="default:copperblock"})
-			core.set_node({x=pos.x, y=pos.y + 1, z=pos.z - 1}, {name="default:copperblock"})
-			core.set_node({x=pos.x, y=pos.y + 2, z=pos.z - 1}, {name="default:copperblock"})
-		elseif direction_axis == "z" then
-			-- when moving in the z axis, walls must go in the x
-			core.set_node({x=pos.x + 1, y=pos.y + 1, z=pos.z}, {name="default:copperblock"})
-			core.set_node({x=pos.x + 1, y=pos.y + 2, z=pos.z}, {name="default:copperblock"})
-			core.set_node({x=pos.x - 1, y=pos.y + 1, z=pos.z}, {name="default:copperblock"})
-			core.set_node({x=pos.x - 1, y=pos.y + 2, z=pos.z}, {name="default:copperblock"})
-		end
+		-- rotate the direction axis pi/2 degrees in the y axis
+		local aux_vector = vector.rotate_around_axis(direction_axis, vector.new(0, 1, 0), math.pi / 2)
 
-		-- TODO fix corners
+		core.set_node(pos + aux_vector + vector.new(0, 1, 0), {name="default:copperblock"})
+		core.set_node(pos + aux_vector + vector.new(0, 2, 0), {name="default:copperblock"})
+
+		core.set_node(pos - aux_vector + vector.new(0, 1, 0), {name="default:copperblock"})
+		core.set_node(pos - aux_vector + vector.new(0, 2, 0), {name="default:copperblock"})
 	end
-
-	print("sb_direction ", vector.to_string(sb_direction))
-	print("direction ", vector.to_string(direction))
-	if other_direction then
-		print("o_direction ", vector.to_string(other_direction))
-	end
-	print("orig_node ", vector.to_string(orig_node))
-	print("dest_node ", vector.to_string(dest_node), '\n')
 
 	-- TODO we must go first in the sb_direction and then in the other, however we dont know which of the directions holds the sb_direction
 	-- check it with and if and select first direction and then the other
+	local walker = orig_node
 
-	while vector.dot(orig_node, sb_direction) ~= vector.dot(dest_node, sb_direction) do
-		core.set_node(orig_node, {name="default:copperblock"})
-		core.set_node(vector.offset(orig_node, 0, 1, 0), {name="air"})
-		core.set_node(vector.offset(orig_node, 0, 2, 0), {name="air"})
-		core.set_node(vector.offset(orig_node, 0, 3, 0), {name="default:copperblock"})
-
-		orig_node = orig_node + sb_direction
+	while vector.dot(walker, sb_direction) ~= vector.dot(dest_node, sb_direction) do
+		place_corridor_with_walls(walker, sb_direction)
+		walker = walker + sb_direction
 	end
 
 	-- we have not reach the destination, we need an L shaped corridor
 	if other_direction then
-    -- if other_direction is the sb_direction we must change the direction
-    -- srry for bad explaining :(
-    if sb_direction == other_direction then
-      other_direction = direction
-    end
-		while vector.dot(orig_node, other_direction) ~= vector.dot(dest_node, other_direction) do
-			core.set_node(orig_node, {name="default:copperblock"})
-			core.set_node(vector.offset(orig_node, 0, 1, 0), {name="air"})
-			core.set_node(vector.offset(orig_node, 0, 2, 0), {name="air"})
-			core.set_node(vector.offset(orig_node, 0, 3, 0), {name="default:copperblock"})
+		-- if other_direction is the sb_direction we must change the direction
+		-- srry for bad explaining :(
+		if sb_direction == other_direction then
+		  other_direction = direction
+		end
 
-			orig_node = orig_node + other_direction
+		-- fix the corner problem, place a wall in front of the walker and then turn
+		core.set_node(walker + sb_direction + vector.new(0, 1, 0), {name="default:copperblock"})
+		core.set_node(walker + sb_direction + vector.new(0, 2, 0), {name="default:copperblock"})
+
+		core.set_node(walker - other_direction + vector.new(0, 1, 0), {name="default:copperblock"})
+		core.set_node(walker - other_direction + vector.new(0, 2, 0), {name="default:copperblock"})
+
+		core.set_node(vector.offset(walker, 0, 3, 0), {name="default:copperblock"})
+		core.set_node(vector.offset(walker, 0, 0, 0), {name="default:copperblock"})
+
+		walker = walker + other_direction
+
+		-- check if we are approaching the destination node, if not we must not walk
+		local distance1 = math.abs(vector.dot(walker, other_direction) - vector.dot(dest_node, other_direction))
+		local distance2 = math.abs(vector.dot(walker + other_direction, other_direction) - vector.dot(dest_node, other_direction))
+
+		local is_approaching = distance2 < distance1
+
+		-- since we have stepped once, check if we have reach our destination
+		if is_approaching then
+			while vector.dot(walker, other_direction) ~= vector.dot(dest_node, other_direction) do
+				place_corridor_with_walls(walker, other_direction)
+				walker = walker + other_direction
+			end
 		end
 	end
 
-	-- while orig_node.x ~= dest_node.x do
-	-- 	place_corridor_with_walls(orig_node, "x")
-	-- 	if orig_node.x < dest_node.x then
-	-- 		orig_node.x = orig_node.x + 1
-	-- 	else
-	-- 		orig_node.x = orig_node.x - 1
-	-- 	end
-	-- end
-	--
-	-- while orig_node.z ~= dest_node.z do
-	-- 	place_corridor_with_walls(orig_node, "z")
-	-- 	if orig_node.z < dest_node.z then
-	-- 		orig_node.z = orig_node.z + 1
-	-- 	else
-	-- 		orig_node.z = orig_node.z - 1
-	-- 	end
-	-- end
-
-	-- place_corridor_with_walls(dest_node, orig_node.x == dest_node.x and "z" or "x")
+	core.set_node(walker + vector.new(0, 1, 0), {name="air"})
+	core.set_node(walker + vector.new(0, 2, 0), {name="air"})
+	---------------
+	-- debugging --
+	---------------
+	print("from " .. vector.to_string(orig_node) .. " to " .. vector.to_string(dest_node))
+	print("sb_direction ", vector.to_string(sb_direction))
+	if direction and other_direction then
+		print("direction ", vector.to_string(direction))
+		print("o_direction ", vector.to_string(other_direction))
+	end
+	print("orig_node ", vector.to_string(orig_node))
+	print("dest_node ", vector.to_string(dest_node), '\n')
 end
 
 function Dungeon:build_dungeon(subdungeon)
@@ -424,6 +423,10 @@ function Dungeon:generate()
 
 	print("building walls, floors and corridors...")
 	self:build_dungeon(main_sb)
+end
+
+function Dungeon:get_spawn_point()
+	return {x = 25, z = 25, y = 20}
 end
 
 return Dungeon

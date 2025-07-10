@@ -8,9 +8,9 @@ Subdungeon = {}
 -- MIN_ROOM_LENGTH^2 must be less than MAX_M2, rooms need space to spawn in the subdungeon area
 Subdungeon.ROOM_BLOCK = {name = "default:cobble", param2 = 1}
 Subdungeon.CORRIDOR_BLOCK = {name = "default:copperblock", param2 = 1}
-Subdungeon.MAX_M2 = 1000
-Subdungeon.MAX_ROOM_HEIGTH = 10
-Subdungeon.MIN_ROOM_LENGTH = 10
+Subdungeon.MAX_M2 = 400
+Subdungeon.MAX_ROOM_HEIGTH = 4
+Subdungeon.MIN_ROOM_LENGTH = 5
 
 function Subdungeon:new(data)
 	local obj = {}
@@ -95,6 +95,8 @@ function Subdungeon:create_room()
 
 	print("Creating room in " .. self:__tostring())
 
+	local block = Subdungeon.ROOM_BLOCK
+
 	local space = self.data
 
 	local width = space[1]
@@ -136,18 +138,27 @@ function Subdungeon:create_room()
 		is_invalid = rand_width < threshold or rand_height < threshold
 	end
 
+	-- we should place this before the rand points are calculated
+	if math.random() < 0 then
+		print("full room")
+		block = {name="default:goldblock"}
+		rand_width = width
+		rand_height = height
+		rand_point = point
+	end
+
 	print("rand_width = " .. rand_width)
 	print("rand_height = " .. rand_height)
 
 	for i = 0, rand_width do
 		for j = 0, rand_height do
-			vm:set_node_at({x = i + rand_point.x, y = 0, z = j + rand_point.z}, Subdungeon.ROOM_BLOCK)
+			vm:set_node_at({x = i + rand_point.x, y = 0, z = j + rand_point.z}, block)
 
 			if i == 0 or j == 0 or i == rand_width or j == rand_height then
 				-- create the walls
 				for k = rand_point.y, Subdungeon.MAX_ROOM_HEIGTH do
 					local pos = rand_point + vector.new(i, k, j)
-					vm:set_node_at(pos, Subdungeon.ROOM_BLOCK)
+					vm:set_node_at(pos, block)
 				end
 			end
 		end

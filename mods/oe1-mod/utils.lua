@@ -34,6 +34,64 @@ function Utils.is_inside_room(point, room)
 	return is_inside
 end
 
+function Utils.is_room_corner(point, room)
+	-- check if it is a point
+	if type(point) ~= "table" or point.x == nil or point.y == nil or point.z == nil then
+		return
+	end
+
+	-- get room data
+    local width = room[1]
+    local height = room[2]
+	local room_point = room[3]
+
+	-- the point we recive is in y=1, we must add y=y+1 in the room point
+	room_point = vector.offset(room_point, 0, 1, 0)
+
+	-- corners
+	local c1 = vector.offset(room_point, 0, 0, 0)
+	local c2 = vector.offset(room_point, width, 0, 0)
+	local c3 = vector.offset(room_point,		 0,	0, height)
+	local c4 = vector.offset(room_point, width, 0, height)
+
+	-- debugging
+	-- print("===CORNERS===")
+	-- print("point: ", point)
+	-- print("c1: ", c1, " ", c1 == point)
+	-- print("c2: ", c2, " ", c2 == point)
+	-- print("c3: ", c3, " ", c3 == point)
+	-- print("c4: ", c4, " ", c4 == point)
+	-- print("=============")
+
+	return c1 == point or c2 == point or c3 == point or c4 == point
+end
+
+function Utils.is_room_border(point, room)
+	-- check if a valid point
+	if not vector.check(point) then return end
+
+	-- get room data
+    local width = room[1]
+    local height = room[2]
+	local room_point = room[3]
+
+    local x_min = room_point.x
+    local x_max = room_point.x + width - 1
+    local z_min = room_point.z
+    local z_max = room_point.z + height - 1
+
+    -- check if point is inside room
+    if point.x >= x_min and point.x <= x_max and
+       point.z >= z_min and point.z <= z_max then
+
+        -- check if it is in the border
+        return point.x == x_min or point.x == x_max or
+               point.z == z_min or point.z == z_max
+    end
+
+    return false
+end
+
 function Utils.manhattan_distance(origin, dest)
 	return math.abs(origin.x - dest.x) + math.abs(origin.y - dest.y) + math.abs(origin.z - dest.z)
 end
@@ -259,6 +317,5 @@ function Utils:connect_two_subdungeons(subdungeon1, subdungeon2)
 	core.set_node({x = dest_node.x, y = dest_node.y + 1, z = dest_node.z}, {name="air"})
 	core.set_node({x = dest_node.x, y = dest_node.y + 2, z = dest_node.z}, {name="air"})
 end
+
 return Utils
-
-
