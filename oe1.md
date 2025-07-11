@@ -120,6 +120,9 @@ We create a new dungeon object and then use the `generate` callback to fill the 
 
 ## Images
 
+> [!NOTE]
+> "The node selection was based purely on development reasons, not aesthetics."
+
 ```conf
 dungeon_size = 100
 subdungeon_max_m2 = 1000
