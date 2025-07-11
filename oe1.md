@@ -118,7 +118,7 @@ subdungeon_min_room_length = 5
 subdungeon_full_room_prob = 0.01
 ```
 
-![oe1 dungeon](./img/dungeon1)
+![oe1 dungeon picture](./img/dungeon1.png)
 
 Medium size dungeon with long corridors
 
@@ -131,7 +131,7 @@ subdungeon_min_room_length = 5
 subdungeon_full_room_prob = 0.01
 ```
 
-![oe1 dungeon](./img/dungeon2)
+![oe1 dungeon picture](./img/dungeon2.png)
 
 Big size dungeon. It has a lot of small rooms. Due to the dungeon size we are able to see some `full_size` rooms that are built with goldblocks. Remember that this type of rooms always fills all the space available.
 
@@ -144,7 +144,7 @@ subdungeon_min_room_length = 10
 subdungeon_full_room_prob = 0.1
 ```
 
-![oe1 dungeon](./img/dungeon3)
+![oe1 dungeon picture](./img/dungeon3.png)
 
 Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
 
@@ -157,7 +157,7 @@ subdungeon_min_room_length = 4
 subdungeon_full_room_prob = 0.1
 ```
 
-![oe1 dungeon](./img/dungeon4)
+![oe1 dungeon picture](./img/dungeon4.png)
 
 Small size dungeon with only 6 small size rooms. Despite 10% of probability, no `full_size` room has spawned. Corridors are short since the rooms are really close from each other. No L-shaped corridors has been spawned
 
@@ -170,6 +170,6 @@ subdungeon_min_room_length = 4
 subdungeon_full_room_prob = 0.1
 ```
 
-![oe1 dungeon](./img/dungeon5)
+![oe1 dungeon picture](./img/dungeon5.png)
 
 Ultimate dungeon task. Just try to complete all the task!
