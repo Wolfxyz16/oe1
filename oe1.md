@@ -1,4 +1,4 @@
-# Open Endedness Environment 1 (OE1)
+# Open Endedness 1 (OE1)
 
 ## General overview
 
@@ -86,9 +86,10 @@ When dealing with the corridors placement algorithm, one of my first attempts wa
 The dungeon spawn takes place in the `core.register_on_newplayer` function.
 
 ```lua
-    math.randomseed(os.time() * 22)
-	d = Dungeon:new( Subdungeon:new({100, 100 , vector.new(0, 0, 0)}) )
-	d:generate()
+-- set the seed
+math.randomseed(os.time() * 22)
+d = Dungeon:new( Subdungeon:new({100, 100 , vector.new(0, 0, 0)}) )
+d:generate()
 ```
 
 We create a new dungeon object and then use the `generate` callback to fill the space.
@@ -99,15 +100,23 @@ We create a new dungeon object and then use the `generate` callback to fill the 
 
 ## What's missing?
 
-[ ] Different shape rooms
+[ ] Different shape rooms. Adds variation between the rooms. Must be controlled by an hyperparameter.
 
-[ ] More squared rooms
+[ ] More squared rooms. This also involves more squared subdungeons.
 
-[ ] Different width corridors
+[ ] Different width corridors. Not so urgent. May add some variation.
 
 [ ] Add more corridors when dungeon building is finished. This way the final dungeon would be more "laberynthic". This can be also controlled with an hyperparameter
 
-[ ] Create performance test to compare speed of the dungeon builder
+[ ] Create performance test to compare speed of the dungeon builder. Measure build times in seconds.
+
+[ ] There is a bug when the L-shaped corridor alg fails and the `dest_node` fallsback to the `room_mid_point2`. Very rare bug, usually happens with big dungeon sizes. Have name it [«mecachis» bug](https://github.com/Wolfxyz16/oe1/blob/main/mods/oe1-mod/dungeon.lua#L249).
+
+[ ] Dungeon seed must be asociated with luanti's world seed. No point of setting a manual seed.
+
+[ ] Set player spawn point and goldblock location. Djisktra alg.
+
+[ ] More tasks...
 
 ## Images
 
@@ -131,7 +140,7 @@ subdungeon_min_room_length = 5
 subdungeon_full_room_prob = 0.01
 ```
 
-Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
+Big sized dungeon with small rooms. Corridors are medium size and usually conect each other. Some `full_size` rooms have spawned.
 
 ![oe1 dungeon picture](./img/dungeon2.png)
 
@@ -143,6 +152,8 @@ subdungeon_max_m2 = 4000
 subdungeon_min_room_length = 10
 subdungeon_full_room_prob = 0.1
 ```
+
+Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
 
 ![oe1 dungeon picture](./img/dungeon3.png)
 

@@ -8,10 +8,10 @@ Subdungeon = {}
 -- MIN_ROOM_LENGTH^2 must be less than MAX_M2, rooms need space to spawn in the subdungeon area
 Subdungeon.ROOM_BLOCK = {name = "default:cobble", param2 = 1}
 Subdungeon.CORRIDOR_BLOCK = {name = "default:copperblock", param2 = 1}
-Subdungeon.MAX_M2 = 1000
+Subdungeon.MAX_M2 = 400
 Subdungeon.MAX_ROOM_HEIGTH = 4
-Subdungeon.MIN_ROOM_LENGTH = 5
-Subdungeon.FULL_ROOM_PROB = 0.01
+Subdungeon.MIN_ROOM_LENGTH = 4
+Subdungeon.FULL_ROOM_PROB = 0.1
 
 function Subdungeon:new(data)
 	local obj = {}

@@ -247,7 +247,7 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 
 	-- fallback
 	-- TODO fix this bug, sometime when the dungeon is big the L shape corridor fails
-	if not dest_node then dest_node = room_mid_point2 print("mechachis") end
+	if not dest_node then dest_node = room_mid_point2 print("mecachis") end
 
 	-- return to y=0
 	orig_node = orig_node - vector.new(0, 1, 0)
