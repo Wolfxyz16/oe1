@@ -95,4 +95,81 @@ We create a new dungeon object and then use the `generate` callback to fill the 
 
 ## More functionality
 
+...
+
 ## What's missing?
+
+[ ] Different shape rooms
+
+[ ] More squared rooms
+
+[ ] Different width corridors
+
+[ ] Add more corridors when dungeon building is finished. This way the final dungeon would be more "laberynthic". This can be also controlled with an hyperparameter
+
+[ ] Create performance test to compare speed of the dungeon builder
+
+## Images
+
+```conf
+dungeon_size = 100
+subdungeon_max_m2 = 1000
+subdungeon_min_room_length = 5
+subdungeon_full_room_prob = 0.01
+```
+
+![oe1 dungeon](./img/dungeon1)
+
+Medium size dungeon with long corridors
+
+---
+
+```conf
+dungeon_size = 400
+subdungeon_max_m2 = 500
+subdungeon_min_room_length = 5
+subdungeon_full_room_prob = 0.01
+```
+
+![oe1 dungeon](./img/dungeon2)
+
+Big size dungeon. It has a lot of small rooms. Due to the dungeon size we are able to see some `full_size` rooms that are built with goldblocks. Remember that this type of rooms always fills all the space available.
+
+---
+
+```conf
+dungeon_size = 200
+subdungeon_max_m2 = 4000
+subdungeon_min_room_length = 10
+subdungeon_full_room_prob = 0.1
+```
+
+![oe1 dungeon](./img/dungeon3)
+
+Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
+
+---
+
+```conf
+dungeon_size = 40
+subdungeon_max_m2 = 400
+subdungeon_min_room_length = 4
+subdungeon_full_room_prob = 0.1
+```
+
+![oe1 dungeon](./img/dungeon4)
+
+Small size dungeon with only 6 small size rooms. Despite 10% of probability, no `full_size` room has spawned. Corridors are short since the rooms are really close from each other. No L-shaped corridors has been spawned
+
+---
+
+```conf
+dungeon_size = 2000
+subdungeon_max_m2 = 400
+subdungeon_min_room_length = 4
+subdungeon_full_room_prob = 0.1
+```
+
+![oe1 dungeon](./img/dungeon5)
+
+Ultimate dungeon task. Just try to complete all the task!
