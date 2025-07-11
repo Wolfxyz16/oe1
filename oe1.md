@@ -118,9 +118,9 @@ subdungeon_min_room_length = 5
 subdungeon_full_room_prob = 0.01
 ```
 
-![oe1 dungeon picture](./img/dungeon1.png)
-
 Medium size dungeon with long corridors
+
+![oe1 dungeon picture](./img/dungeon1.png)
 
 ---
 
@@ -131,9 +131,9 @@ subdungeon_min_room_length = 5
 subdungeon_full_room_prob = 0.01
 ```
 
-![oe1 dungeon picture](./img/dungeon2.png)
+Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
 
-Big size dungeon. It has a lot of small rooms. Due to the dungeon size we are able to see some `full_size` rooms that are built with goldblocks. Remember that this type of rooms always fills all the space available.
+![oe1 dungeon picture](./img/dungeon2.png)
 
 ---
 
@@ -146,9 +146,9 @@ subdungeon_full_room_prob = 0.1
 
 ![oe1 dungeon picture](./img/dungeon3.png)
 
-Big sized dungeon with very big rooms. However this rooms are quite separated from each other. There are a few corridors and they are very long.
-
 ---
+
+Small size dungeon with only 6 small size rooms. Despite 10% of probability, no `full_size` room has spawned. Corridors are short since the rooms are really close from each other. No L-shaped corridors has been spawned
 
 ```conf
 dungeon_size = 40
@@ -159,8 +159,6 @@ subdungeon_full_room_prob = 0.1
 
 ![oe1 dungeon picture](./img/dungeon4.png)
 
-Small size dungeon with only 6 small size rooms. Despite 10% of probability, no `full_size` room has spawned. Corridors are short since the rooms are really close from each other. No L-shaped corridors has been spawned
-
 ---
 
 ```conf
@@ -170,6 +168,9 @@ subdungeon_min_room_length = 4
 subdungeon_full_room_prob = 0.1
 ```
 
-![oe1 dungeon picture](./img/dungeon5.png)
+> **"The dungeon stretches beyond my sight."**
 
 Ultimate dungeon task. Just try to complete all the task!
+
+![oe1 dungeon picture](./img/dungeon5.png)
+
