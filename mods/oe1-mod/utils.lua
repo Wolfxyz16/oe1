@@ -2,36 +2,11 @@ Utils = {}
 
 function Utils.pseudo_normal_random(min, max)
     local sum = 0
-    for _ = 1, 4 do
+    for _ = 1, 6 do
         sum = sum + math.random()
     end
     local avg = sum / 6
     return math.floor( min + (max - min) * avg )
-end
-
-function Utils.is_inside_room(point, room)
-	-- check if it is a point
-	if type(point) ~= "table" or point.x == nil or point.y == nil or point.z == nil then
-		return
-	end
-
-	-- get room data
-    local width = room[1]
-    local height = room[2]
-	local room_point = room[3]
-
-	-- check bounds
-	local x_bounds = ( room_point.x <= point.x ) and ( point.x <= room_point.x + width )
-	local y_bounds = ( room_point.y <= point.y ) and ( point.y <= room_point.y )
-	local z_bounds = ( room_point.z <= point.z ) and ( point.z <= room_point.z + height )
-
-	local is_inside = false
-
-	if x_bounds and y_bounds and z_bounds then
-		is_inside = true
-	end
-
-	return is_inside
 end
 
 function Utils.is_room_corner(point, room)
@@ -55,13 +30,17 @@ function Utils.is_room_corner(point, room)
 	local c4 = vector.offset(room_point, width, 0, height)
 
 	-- debugging
-	-- print("===CORNERS===")
-	-- print("point: ", point)
-	-- print("c1: ", c1, " ", c1 == point)
-	-- print("c2: ", c2, " ", c2 == point)
-	-- print("c3: ", c3, " ", c3 == point)
-	-- print("c4: ", c4, " ", c4 == point)
-	-- print("=============")
+	print("===ROOM===")
+	print("room_point: ", vector.to_string(room_point))
+	print("width: ", width)
+	print("height: ", height)
+	print("===CORNERS===")
+	print("point: ", point)
+	print("c1: ", c1, " ", c1 == point)
+	print("c2: ", c2, " ", c2 == point)
+	print("c3: ", c3, " ", c3 == point)
+	print("c4: ", c4, " ", c4 == point)
+	print("=============")
 
 	return c1 == point or c2 == point or c3 == point or c4 == point
 end
@@ -97,9 +76,9 @@ function Utils.manhattan_distance(origin, dest)
 end
 
 function Utils.contains(list, element)
-	for _, value in pairs(list) do
-		if value == element then
-			return true, value
+	for _, index in pairs(list) do
+		if index == element then
+			return true, index
 		end
 	end
 	return false, nil
@@ -116,16 +95,6 @@ function Utils.exits_shorter_path(list, new_element)
 		end
 	end
 	return false
-end
-
-function Utils.pos(list, element)
-	-- returns element position in list, if not returns 0
-	for i, value in pairs(list) do
-		if Utils.eq(value, element) then
-			return i
-		end
-	end
-	return 0
 end
 
 function Utils.reconstruct_path(dest)
@@ -220,102 +189,6 @@ function Utils.a_star(origin, dest)
 
 	-- no path found
 	return {}
-end
-
-function Utils:connect_two_subdungeons(subdungeon1, subdungeon2)
-	-- we can connect two subdungeons with a link either between two rooms, or a corridor and a room or two corridors
-
-	-- room = {rand_width, rand_height, rand_point, doors}
-	-- get the rooms list from each subdungeon
-	local rooms1 = subdungeon1.rooms
-	local rooms2 = subdungeon2.rooms
-
-	-- function to calculate the middle point of a given room
-	local function room_middle_point(room)
-		local width = room[1]
-		local height = room[2]
-		local point = room[3]
-
-		local mid_vector = vector.new(math.floor(width / 2), 0, math.floor(height / 2))
-
-		return (point + mid_vector)
-	end
-
-	-- search for the pair of rooms with the lowest distance
-	local min_distance = math.huge
-	local mid_point1, mid_point2
-	local orig_room, dest_room
-
-	for _, room1 in ipairs(rooms1) do
-		for _, room2 in ipairs(rooms2) do
-			local mid1, mid2 = room_middle_point(room1), room_middle_point(room2)
-
-			local distance = vector.distance(mid1, mid2)
-
-			if distance < min_distance then
-				mid_point1, mid_point2 = mid1, mid2
-				orig_room, dest_room = room1, room2
-				min_distance = distance
-			end
-		end
-	end
-
-	-- calculate the entry and exit point of the corridor using luanti's Raycast
-	mid_point1 = mid_point1 + vector.new(0, 1, 0)
-	mid_point2 = mid_point2 + vector.new(0, 1, 0)
-
-	local ray = Raycast(mid_point1, mid_point2)
-	local intersected_nodes = {}
-
-	for pointed_thing in ray do
-		-- check if the pointed thing is a node
-		if pointed_thing.type == "node" then
-			table.insert(intersected_nodes, pointed_thing.under)
-		end
-	end
-
-	print("intersected_nodes: ", #intersected_nodes)
-
-	-- select the first and last nodes, we must connect them with a corridor
-	local orig_node, dest_node = intersected_nodes[1], intersected_nodes[#intersected_nodes]
-
-	orig_node = orig_node - vector.new(0, 1, 0)
-	dest_node = dest_node - vector.new(0, 1, 0)
-
-	print(vector.direction(orig_node, dest_node))
-
-	-- corridor building logic
-	-- iterate while we have not reach the destination room
-
-	-- move x
-	while orig_node.x ~= dest_node.x do
-		core.set_node(orig_node, {name="default:copperblock"})
-		core.set_node({x = orig_node.x, y = orig_node.y + 1, z = orig_node.z}, {name="air"})
-		core.set_node({x = orig_node.x, y = orig_node.y + 2, z = orig_node.z}, {name="air"})
-
-		if orig_node.x < dest_node.x then
-			orig_node.x = orig_node.x + 1
-		else
-			orig_node.x = orig_node.x - 1
-		end
-	end
-
-	-- move z
-	while orig_node.z ~= dest_node.z do
-		core.set_node(orig_node, {name="default:copperblock"})
-		core.set_node({x = orig_node.x, y = orig_node.y + 1, z = orig_node.z}, {name="air"})
-		core.set_node({x = orig_node.x, y = orig_node.y + 2, z = orig_node.z}, {name="air"})
-
-		if orig_node.z < dest_node.z then
-			orig_node.z = orig_node.z + 1
-		else
-			orig_node.z = orig_node.z - 1
-		end
-	end
-
-	core.set_node(dest_node, {name="default:copperblock"})
-	core.set_node({x = dest_node.x, y = dest_node.y + 1, z = dest_node.z}, {name="air"})
-	core.set_node({x = dest_node.x, y = dest_node.y + 2, z = dest_node.z}, {name="air"})
 end
 
 return Utils

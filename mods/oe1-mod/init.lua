@@ -14,8 +14,8 @@ end)
 
 core.register_on_newplayer(function(player)
 	-- create dungeon object and calculate its nodes
-	math.randomseed(os.time() * 22)
-	d = Dungeon:new( Subdungeon:new({100, 100 ,vector.new(0, 0, 0)}) )
+	math.randomseed(22)
+	d = Dungeon:new( Subdungeon:new({100, 100 , vector.new(0, 0, 0)}) )
 	d:generate()
 
 	print("There are " .. #d.root.rooms .. " rooms")

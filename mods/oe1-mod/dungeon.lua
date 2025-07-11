@@ -85,71 +85,6 @@ function Dungeon:__tostring()
 	return dungeon_string
 end
 
-function Dungeon:create_dirt_floor()
-	-- set dirt floor, will be deleted later
-	local p1 = self.point
-	local p2 = vector.new(p1.x + self.width, -1, p1.z + self.height)
-
-	-- create a voxelmanip object and read from the map
-	local vm = VoxelManip(p1, p2)
-
-	local data = vm:get_data()
-	local point1, point2 = vm:get_emerged_area()
-	local dirt_id = core.get_content_id(Dungeon.FLOOR_BLOCK.name)
-
-	local va = VoxelArea(point1, point2)
-
-	for z = point1.z, point2.z do
-		for x = point1.x, point2.x do
-			local index = va:index(x, -1, z)
-			data[index] = dirt_id
-		end
-	end
-
-	vm:set_data(data)
-	vm:write_to_map()
-	-- vm:close()
-end
-
-function Dungeon:connect_two_leaves(subdungeon1, subdungeon2)
-	-- calculate the center point of each room subdungeon
-	local sb1 = subdungeon1:get_middle_point()
-	local sb2 = subdungeon2:get_middle_point()
-
-	-- iterate while we have not reach the destination room
-	while sb1.x ~= sb2.x or sb1.z ~= sb2.z do
-		if sb1.x < sb2.x then
-			sb1.x = sb1.x + 1
-		elseif sb1.x > sb2.x then
-			sb1.x = sb1.x - 1
-		elseif sb1.z < sb2.z then
-			sb1.z = sb1.z + 1
-		elseif sb1.z > sb2.z then
-			sb1.z = sb1.z - 1
-		end
-
-		core.set_node(sb1, {name="default:copperblock"})
-
-		-- TODO: Missing wall building for corridors
-		-- core.set_node({x = sb1.x, y = sb1.y + 3, z = sb1.z}, {name="default:copperblock"})
-
-		-- core.set_node({x = sb1.x + 1, y = sb1.y + 1, z = sb1.z}, {name="default:copperblock"})
-		-- core.set_node({x = sb1.x - 1, y = sb1.y + 1, z = sb1.z}, {name="default:copperblock"})
-
-		-- core.set_node({x = sb1.x + 1, y = sb1.y + 2, z = sb1.z}, {name="default:copperblock"})
-		-- core.set_node({x = sb1.x - 1, y = sb1.y + 2, z = sb1.z}, {name="default:copperblock"})
-
-		-- core.set_node({x = sb1.x, y = sb1.y + 1, z = sb1.z + 1}, {name="default:copperblock"})
-		-- core.set_node({x = sb1.x, y = sb1.y + 1, z = sb1.z - 1}, {name="default:copperblock"})
-
-		-- core.set_node({x = sb1.x, y = sb1.y + 2, z = sb1.z + 1}, {name="default:copperblock"})
-		-- core.set_node({x = sb1.x, y = sb1.y + 2, z = sb1.z - 1}, {name="default:copperblock"})
-
-		core.set_node({x = sb1.x, y = sb1.y + 1, z = sb1.z}, {name="air"})
-		core.set_node({x = sb1.x, y = sb1.y + 2, z = sb1.z}, {name="air"})
-	end
-end
-
 function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 	-- we can connect two subdungeons with a link either between two rooms, or a corridor and a room or two corridors
 	-- ASSUMPTION, we always start at subdungeon1 and end in subdungeon2
@@ -208,21 +143,9 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 	--------------------------------------------
 	local orig_node, dest_node, ray
 
-	-- calculate the possible origins points of the corridor using luanti's Raycast
-	do
-		ray = Raycast(room_mid_point1, room_mid_point2)
-		for pointed_thing in ray do
-			if pointed_thing.type == "node" then
-				orig_node = pointed_thing.under
-				break
-			end
-		end
-	end
-
 	-- check if we can build a straight corridor from room_mid_point
 	local aux_direction = vector.apply(vector.rotate_around_axis(sb_direction, vector.new(0, 1, 0), math.pi / 2), math.abs)
-	-- TODO, length should be til the end of the subdungeon
-	local length = sb_direction * math.round(min_distance * 1.5)
+	local length = sb_direction * math.round(min_distance)	-- TODO, length should be til the end of the subdungeon
 	local current_node = room_mid_point1
 
 	local index
@@ -233,19 +156,22 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 		-- alternate between + and -
 		for _, sign in ipairs({1, -1}) do
 			local pointed_things = {}
+
+			-- from the middle point of the room to the direction of the other subdungeon
 			current_node = room_mid_point1 + vector.multiply(aux_direction, i * sign)
-			print(vector.to_string(vector.multiply(aux_direction, i * sign)))
+
 			ray = Raycast(current_node + sb_direction, current_node + length)
 
-			print("Ray from ", vector.to_string(current_node), " to ", vector.to_string(current_node + length))
-
-			-- fill the pointed_things table
+			-- cast the ray and store all colissions in pointed_things table
 			for pointed_thing in ray do
 				if pointed_thing.type == "node" then
 					table.insert(pointed_things, pointed_thing.under)
 				end
 			end
 
+			print("Ray from ", vector.to_string(current_node), " to ", vector.to_string(current_node + length))
+
+			-- first and second collision must be origin and destination nodes
 			if pointed_things[2] and not Utils.is_room_corner(pointed_things[2], closest_room2) then
 				orig_node = pointed_things[1]
 				dest_node = pointed_things[2] + sb_direction
@@ -259,6 +185,17 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 	-- finally, if dest_node still is nil we must build a L shaped corridor
 	if not dest_node then
 		print("we going L shape")
+
+		-- calculate the possible origins points of the corridor using luanti's Raycast
+		do
+			ray = Raycast(room_mid_point1, room_mid_point2)
+			for pointed_thing in ray do
+				if pointed_thing.type == "node" then
+					orig_node = pointed_thing.under
+					break
+				end
+			end
+		end
 
 		-- room_mid_point1 and room_mid_point2 are diagonally nodes, we need the vectors in which we can approach dest_node
 		if room_mid_point1.x < room_mid_point2.x and room_mid_point1.z < room_mid_point2.z then
@@ -283,10 +220,7 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 			direction = vector.new(-1, 0, 0)
 		end
 
-		local distance = math.abs(
-			vector.dot(room_mid_point1, sb_direction) -
-			vector.dot(room_mid_point2, sb_direction)
-		)
+		local distance = math.abs( vector.dot(room_mid_point1, sb_direction) - vector.dot(room_mid_point2, sb_direction) )
 
 		print("distance " .. distance)
 		print(vector.multiply(sb_direction, distance))
@@ -338,8 +272,7 @@ function Dungeon:connect_two_subdungeons(subdungeon1, subdungeon2)
 		core.set_node(pos - aux_vector + vector.new(0, 2, 0), {name="default:copperblock"})
 	end
 
-	-- TODO we must go first in the sb_direction and then in the other, however we dont know which of the directions holds the sb_direction
-	-- check it with and if and select first direction and then the other
+	-- variable is going to move in every iteration
 	local walker = orig_node
 
 	while vector.dot(walker, sb_direction) ~= vector.dot(dest_node, sb_direction) do

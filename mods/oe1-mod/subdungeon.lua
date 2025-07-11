@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Subdungeon represents a node in the tree. It's data is {x_length, y_length, {x_orig, y_orig}} --
+-- Subdungeon represents a node in the tree. It's data is {x_length, y_length, point(api)} --
 ---------------------------------------------------------------------------------------------------
 Subdungeon = {}
 
@@ -8,9 +8,10 @@ Subdungeon = {}
 -- MIN_ROOM_LENGTH^2 must be less than MAX_M2, rooms need space to spawn in the subdungeon area
 Subdungeon.ROOM_BLOCK = {name = "default:cobble", param2 = 1}
 Subdungeon.CORRIDOR_BLOCK = {name = "default:copperblock", param2 = 1}
-Subdungeon.MAX_M2 = 400
+Subdungeon.MAX_M2 = 1000
 Subdungeon.MAX_ROOM_HEIGTH = 4
 Subdungeon.MIN_ROOM_LENGTH = 5
+Subdungeon.FULL_ROOM_PROB = 0.01
 
 function Subdungeon:new(data)
 	local obj = {}
@@ -62,6 +63,7 @@ function Subdungeon:split_subdungeon()
 
 		-- select a random split point, this is a number
 		random_position = Utils.pseudo_normal_random(1, data[random_direction])
+
 		if random_direction == 2 then
 			-- horizontal
 			subdungeon1 = Subdungeon:new({width, random_position, point})
@@ -78,6 +80,7 @@ function Subdungeon:split_subdungeon()
 	print("random_position = " .. random_position)
 	print("A:\t" .. subdungeon1:__tostring())
 	print("B:\t" .. subdungeon2:__tostring())
+	print('\n')
 
 	-- insert in the binary tree
 	self:insert(subdungeon1, subdungeon2)
@@ -139,7 +142,7 @@ function Subdungeon:create_room()
 	end
 
 	-- we should place this before the rand points are calculated
-	if math.random() < 0 then
+	if math.random() < Subdungeon.FULL_ROOM_PROB then
 		print("full room")
 		block = {name="default:goldblock"}
 		rand_width = width
@@ -179,33 +182,6 @@ function Subdungeon:create_room()
 	end
 end
 
-function Subdungeon:get_random_border_point()
-	-- kind of trash, if opposite borders the corridor goes through the middle of the room
-    local width = self.rooms[1]
-    local height = self.rooms[2]
-
-	-- two opposite points of the square
-    local point_a = self.rooms[3]
-	local point_b = point_a + vector.new(width, 0, height)
-
-	-- select two random lengths
-	local rand_vector = vector.new(math.random(width), 0, math.random(height))
-
-	-- choose between point_a or point_b
-	local true_false = {true, false}
-	local is_point_a_selected = true_false[math.random(2)]
-
-	local selected_point
-
-	if is_point_a_selected then
-		selected_point = point_a + rand_vector
-	else
-		selected_point = point_b + rand_vector
-	end
-
-	return selected_point
-end
-
 function Subdungeon:get_room_middle_point()
 	--- from a random room in the subdungeon, get its middle point
 	if #self.rooms == 0 then return end
@@ -222,16 +198,6 @@ function Subdungeon:get_room_middle_point()
 	return (point + mid_vector), room
 end
 
-function Subdungeon:get_room_door_point()
-	if #self.rooms == 0 then return end
-
-	-- random room and random door from the chosen room
-	local room = self.rooms[math.random(#self.rooms)]
-	local door = room[4][math.random(#room[4])]
-
-	return door, room
-end
-
 function Subdungeon:get_middle_point()
     local width = self.data[1]
     local height = self.data[2]
@@ -244,11 +210,10 @@ end
 
 function Subdungeon:is_valid()
 	-- check if the subdungeon has the minimum height and width
-  local aspect_ratio = math.max(self.data[1], self.data[2]) / math.min(self.data[1], self.data[2])
+	local aspect_ratio = math.max(self.data[1], self.data[2]) / math.min(self.data[1], self.data[2])
 	return Subdungeon.MIN_ROOM_LENGTH < self.data[1] and Subdungeon.MIN_ROOM_LENGTH < self.data[2] and aspect_ratio < 10
 end
 
---- Hardcoded function, should be using luanti's vector API
 -- @return boolean indicating if the point is inside the subdungeon
 function Subdungeon:is_inside(point)
 	-- check if it is a point
@@ -296,9 +261,9 @@ function Subdungeon:is_inside_room(point)
 
 		if x_bounds and y_bounds and z_bounds then
 			is_inside = true
+			break
 		else
 			is_inside = false
-			break
 		end
 	end
 

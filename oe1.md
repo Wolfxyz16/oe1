@@ -1,5 +1,7 @@
 # Open Endedness Environment 1 (OE1)
 
+## General overview
+
 The environment generates a dungeon full of rooms and corridors and the player spawns in one of those rooms. The main (and unique) task is to reach a gold block that is located in the other end of the dungeon. When generating the dungeon we have multiple hyperparameters we can tweak in order to change the shape of the dungeon, the rooms and the corridors
 
 * `dungeon_size`:
@@ -15,7 +17,7 @@ A dungeon is represented as a binary tree, each node is considered a subdungeon,
 
 List of methods
 
-* `Dungeon:new(sb)`: Creates a new instance of the dungeon class
+* `Dungeon:new(sb)`: Creates a new instance of the dungeon class. Must recive a subdungeon instance.
 
 * `Dungeon:__tostring()`: Returns an ASCII representation of the dungeon. WIP
 
@@ -33,7 +35,7 @@ A subdungeon represents a node in the binary tree. It is a subregion of the main
 
 List of methods
 
-* `Subdungeon:new(data)`: creates a new instance of the subdungeon class
+* `Subdungeon:new(data)`: creates a new instance of the subdungeon class. Data must be `width`, `heigth` and a vector type instance, it will mark the origin point.
 
 * `Subdungeon:split_subdungeon()`: Recursive function that splits the space until the max_m2 condition is met. This is the main function to split the main dungeon area. We call `split_subdungeon()` method for each child it splits.
 
@@ -57,7 +59,7 @@ List of methods
 
 ### `utils.lua`
 
-Set of random function I did (do) not know where to place them
+Set of random functions I did (do) not know where to place them
 
 * `Utils.pseudo_normal_random(min, max)`: Returns a pseudo random number, it samples 6 random numbers and then calculates the mean. This method is used when splitting subdungeon space. We want the cuts to be close to the middle and not have very small areas.
 
@@ -70,3 +72,27 @@ When dealing with the corridors placement algorithm, one of my first attempts wa
 * `Utils.manhattan_distance(origin, dest)`: Luanti's vectors api measure distance as the euclidean distance. The manhattan distance (or taxi) has been implemented to be used as the heuristic function.
 
 * `Utils.contains(list, element)`: Checks if the element exits in the list and returns it's position. If no element is found a `nil` value is returned.
+
+* `Utils.exits_shorter_path(list, new_element)`: Checks that in the open_list the node already exists and returns true if it is a shorter path
+
+* `Utils.reconstruct_path(dest)`: Given the destination node, it reconstruct the path found by the a* algorithm
+
+* `Utils.a_star(origin, dest)`: Finds the shortest path using the a* algorithm. If path is found returns the list of nodes that forms the path. If not returns an empty table.
+
+---
+
+## Functionality
+
+The dungeon spawn takes place in the `core.register_on_newplayer` function.
+
+```lua
+    math.randomseed(os.time() * 22)
+	d = Dungeon:new( Subdungeon:new({100, 100 , vector.new(0, 0, 0)}) )
+	d:generate()
+```
+
+We create a new dungeon object and then use the `generate` callback to fill the space.
+
+## More functionality
+
+## What's missing?
